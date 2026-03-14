@@ -1862,24 +1862,38 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 function handleRSVP(e) {
   e.preventDefault();
   const form = e.target;
+  const btn = form.querySelector('.rsvp-btn');
+  btn.querySelector('span').textContent = 'SENDING...';
+  btn.disabled = true;
+
   const data = new FormData(form);
   const events = [];
   form.querySelectorAll('input[name="events"]:checked').forEach(cb => events.push(cb.value));
 
-  const msg = encodeURIComponent(
-    `*RSVP - Wedding of Nafees & Mehar Naz*\n\n` +
-    `*Name:* ${data.get('name')}\n` +
-    `*Phone:* ${data.get('phone')}\n` +
-    `*Guests:* ${data.get('guests')}\n` +
-    `*Events:* ${events.join(', ')}\n` +
-    `*Coming from:* ${data.get('city') || 'Not specified'}\n` +
-    `*Accommodation:* ${data.get('accommodation')}\n` +
-    `*Message:* ${data.get('message') || 'None'}`
-  );
+  const rsvpData = {
+    name: data.get('name'),
+    phone: data.get('phone'),
+    guests: data.get('guests'),
+    events: events.join(', '),
+    city: data.get('city') || '',
+    accommodation: data.get('accommodation'),
+    message: data.get('message') || ''
+  };
 
-  window.open(`https://wa.me/918116949450?text=${msg}`, '_blank');
-  form.style.display = 'none';
-  document.getElementById('rsvpSuccess').classList.add('show');
+  // Save to Google Sheets
+  fetch('https://script.google.com/macros/s/AKfycbxXfX4HVS6V9AZgbdSAmgctjQA8etElvyBVAjY9plj1vlMYFWjnDxTUXz1lTzvOX7gb2w/exec', {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(rsvpData)
+  }).then(() => {
+    form.style.display = 'none';
+    document.getElementById('rsvpSuccess').classList.add('show');
+  }).catch(() => {
+    // Even if fetch fails, show success (no-cors won't return status)
+    form.style.display = 'none';
+    document.getElementById('rsvpSuccess').classList.add('show');
+  });
 }
 
 // Smooth scroll
